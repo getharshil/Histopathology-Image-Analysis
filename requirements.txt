@@ -10,4 +10,4 @@ Pillow
 tqdm
 pyyaml
 streamlit
-cv2
+opencv-python-headless
