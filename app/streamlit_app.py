@@ -34,7 +34,7 @@ from src.analysis.quantitative import analyze_activation_map
 # ======================================================================
 st.set_page_config(
     page_title="Histopathology AI Analysis",
-    page_icon="🔬",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -145,25 +145,21 @@ def generate_gradcam(model, img_tensor, device):
     overlay = gradcam.overlay_heatmap(img_tensor, heatmap, alpha=0.4)
     return heatmap, overlay
 
-
-# ======================================================================
-# MAIN APP
-# ======================================================================
 def main():
-    st.markdown('<h1 class="main-header">🔬 Histopathology Image Analysis</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="main-header">Histopathology Image Analysis</h1>', unsafe_allow_html=True)
     st.markdown('<p style="text-align:center; color:#666;">AI-powered classification of colorectal polyp images (HP vs SSA)</p>', unsafe_allow_html=True)
     
     # Disclaimer
     st.markdown("""
     <div class="disclaimer">
-        ⚠️ <strong>DISCLAIMER:</strong> This is a research/educational prototype and is NOT a clinical diagnostic system.
+        <strong>DISCLAIMER:</strong> This is a research/educational prototype and is NOT a clinical diagnostic system.
         It should not be used for medical decision-making. Always consult qualified healthcare professionals for diagnosis.
     </div>
     """, unsafe_allow_html=True)
     
     # Sidebar
     with st.sidebar:
-        st.header("⚙️ Settings")
+        st.header("Settings")
         
         model_name = st.selectbox(
             "Select Model",
@@ -176,21 +172,20 @@ def main():
         show_quantitative = st.checkbox("Show Quantitative Analysis", value=True)
         
         st.markdown("---")
-        st.header("📊 About")
+        st.header("About")
         st.markdown("""
         **Task:** Binary classification  
         **Classes:** HP (Hyperplastic Polyp) vs SSA (Sessile Serrated Adenoma)  
         **Dataset:** MHIST (3,152 images)  
         **Models:** CNN, ResNet-18, EfficientNet-B0  
         """)
-        
-        # Show metrics if available
+
         metrics_path = PROJECT_ROOT / "outputs" / "metrics" / f"{model_name}_metrics.json"
         if metrics_path.exists():
             with open(metrics_path) as f:
                 metrics = json.load(f)
             st.markdown("---")
-            st.header("📈 Test Set Performance")
+            st.header("Test Set Performance")
             for metric in ["roc_auc", "f1_score", "sensitivity", "specificity", "balanced_accuracy"]:
                 if metric in metrics and isinstance(metrics[metric], dict):
                     val = metrics[metric].get("value", "N/A")
@@ -198,7 +193,7 @@ def main():
                         st.metric(metric.replace("_", " ").title(), f"{val:.4f}")
     
     # Main content
-    st.header("📤 Upload Image")
+    st.header("Upload Image")
     uploaded_file = st.file_uploader(
         "Upload a histopathology image (H&E stained, 224×224 recommended)",
         type=["png", "jpg", "jpeg", "tiff", "bmp"],
@@ -206,26 +201,23 @@ def main():
     
     if uploaded_file is not None:
         image = Image.open(uploaded_file).convert("RGB")
-        
-        # Load model
+
         model, device = load_model(model_name)
         if model is None:
-            st.error(f"❌ Model checkpoint not found for '{model_name}'. Run training first.")
+            st.error(f"Model checkpoint not found for '{model_name}'. Run training first.")
             return
         
-        # Predict
         with st.spinner("Running prediction..."):
             result = predict_image(model, device, image)
-        
-        # Display results
+
         col1, col2 = st.columns([1, 1])
         
         with col1:
-            st.subheader("🖼️ Input Image")
+            st.subheader("Input Image")
             st.image(image, use_container_width=True)
         
         with col2:
-            st.subheader("🎯 Prediction")
+            st.subheader("Prediction")
             
             pred_class = result["predicted_class"]
             css_class = "hp-prediction" if pred_class == "HP" else "ssa-prediction"
@@ -236,8 +228,7 @@ def main():
                 {pred_class} — {full_name}
             </div>
             """, unsafe_allow_html=True)
-            
-            # Probability bars
+
             st.markdown("**Prediction Probabilities:**")
             st.progress(result["prob_hp"], text=f"HP (Hyperplastic): {result['prob_hp']:.1%}")
             st.progress(result["prob_ssa"], text=f"SSA (Sessile Serrated Adenoma): {result['prob_ssa']:.1%}")
@@ -245,12 +236,11 @@ def main():
             st.metric("Confidence", f"{result['confidence']:.1%}")
             
             if result["confidence"] < 0.7:
-                st.warning("⚠️ Low confidence prediction — model is uncertain about this image.")
-        
-        # Grad-CAM
+                st.warning("Low confidence prediction — model is uncertain about this image.")
+
         if show_gradcam:
             st.markdown("---")
-            st.subheader("🔥 Grad-CAM Explainability")
+            st.subheader("Grad-CAM Explainability")
             st.caption("Heatmap shows regions the model focused on. This is model attention analysis, NOT lesion segmentation.")
             
             with st.spinner("Generating Grad-CAM..."):
@@ -271,11 +261,10 @@ def main():
             with gcol3:
                 st.markdown("**Overlay**")
                 st.image(overlay, use_container_width=True)
-        
-        # Quantitative analysis
+
         if show_quantitative:
             st.markdown("---")
-            st.subheader("📐 Quantitative Activation Analysis")
+            st.subheader("Quantitative Activation Analysis")
             st.caption("Statistics derived from model attention maps — NOT ground-truth measurements.")
             
             if show_gradcam:
@@ -292,16 +281,14 @@ def main():
                     st.json(display_stats)
     
     else:
-        # Show example results from test set
-        st.info("👆 Upload an image to get started, or explore the pre-computed results below.")
-        
-        # Show pre-computed figures if available
+        st.info("Upload an image to get started, or explore the pre-computed results below.")
+
         gradcam_grid = PROJECT_ROOT / "outputs" / "gradcam"
         figures_dir = PROJECT_ROOT / "outputs" / "figures"
         
         if figures_dir.exists():
             st.markdown("---")
-            st.subheader("📊 Pre-computed Results")
+            st.subheader("Pre-computed Results")
             
             tabs = st.tabs(["Model Comparison", "ROC Curves", "Grad-CAM", "Error Analysis"])
             
